@@ -1,0 +1,65 @@
+version: '3.7'
+
+services:
+  traefik:
+    image: traefik:v2.0
+    networks:
+      - traefik-proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    labels:
+      - "traefik.enable=false"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    command: --providers.docker --api --api.insecure=true --providers.docker.watch true
+
+  mariadb:
+    image: bitnami/mariadb:latest
+    labels:
+      - "traefik.enable=false"
+    environment:
+     - MARIADB_USER=bn_moodle
+     - MARIADB_DATABASE=bitnami_moodle
+     - MARIADB_PASSWORD=bitnami
+     - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - "mariadb_data:/bitnami"
+    networks:
+     - database
+
+  moodle:
+    image: adji21/moodle:1.0
+    environment:
+     - MOODLE_DATABASE_USER=bn_moodle
+     - MOODLE_DATABASE_NAME=bitnami_moodle
+     - MOODLE_DATABASE_PASSWORD=bitnami
+     - ALLOW_EMPTY_PASSWORD=yes
+     - MOODLE_USERNAME=adji21
+     - MOODLE_PASSWORD=Adminadji21
+     - MOODLE_EMAIL=ikhwangaul21@gmail.com
+     - MOODLE_SITE_NAME='Moodle Cluster Docker Swarm'
+    volumes:
+     - "moodle_data:/bitnami"
+    ports:
+     - 8000:8080
+    depends_on:
+     - mariadb
+    networks:
+     - database
+     - traefik-proxy
+    labels:
+     - "traefik.enable=true"
+     - "traefik.http.services.moodle.loadbalancer.server.port=8080"
+     - "traefik.http.routers.moodle.rule=HostRegexp(`{catchall:.*}`)"
+     - "traefik.docker.network=traefik-proxy"
+
+networks:
+  database:
+    driver: overlay
+  traefik-proxy:
+    external: true
+
+volumes:
+  mariadb_data:
+  moodle_data:

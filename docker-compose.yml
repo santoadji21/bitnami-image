@@ -1,0 +1,5 @@
+version: '3'
+services:
+  moodle:
+    build: ./resource/
+    image: adji21/moodle:1.0
