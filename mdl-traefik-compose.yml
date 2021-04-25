@@ -42,7 +42,7 @@ services:
     volumes:
      - "moodle_data:/bitnami"
     ports:
-     - 8000:8080
+     - 8080:8080
     depends_on:
      - mariadb
     networks:
