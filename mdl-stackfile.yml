@@ -12,6 +12,9 @@ services:
     ports:
       - "80:80"
       - "8080:8080"
+    deploy:
+      placement:
+        constraints: [node.role==manager]
     command: --providers.docker --api --api.insecure=true --providers.docker.watch true
 
   mariadb:
@@ -25,11 +28,14 @@ services:
      - ALLOW_EMPTY_PASSWORD=yes
     volumes:
       - "mariadb_data:/bitnami"
+    deploy:
+      placement:
+        constraints: [node.role==worker]
     networks:
      - database
 
   moodle:
-    image: adji21/moodle:1.0
+    image: adji21/moodle:latest
     environment:
      - MOODLE_DATABASE_USER=bn_moodle
      - MOODLE_DATABASE_NAME=bitnami_moodle
@@ -41,6 +47,9 @@ services:
      - MOODLE_SITE_NAME='Moodle Cluster Docker Swarm'
     volumes:
      - "moodle_data:/bitnami"
+    deploy:
+      placement:
+        constraints: [node.role==worker]
     ports:
      - 8000:8080
     depends_on:
