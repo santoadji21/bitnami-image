@@ -3,24 +3,27 @@ version: '3.7'
 services:
   traefik:
     image: traefik:v2.0
-    networks:
-      - traefik-proxy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    labels:
-      - "traefik.enable=false"
     ports:
       - "80:80"
       - "8080:8080"
     deploy:
       placement:
-        constraints: [node.role==manager]
-    command: --providers.docker --api --api.insecure=true --providers.docker.watch true
+        constraints: 
+          - node.role == manager
+    command: 
+      - --providers.docker 
+      - --api 
+      - --api.insecure=true 
+      - --providers.docker=true
+    networks:
+      - traefik-proxy
+    labels:
+      - "traefik.enable=false"
 
   mariadb:
     image: bitnami/mariadb:latest
-    labels:
-      - "traefik.enable=false"
     environment:
      - MARIADB_USER=bn_moodle
      - MARIADB_DATABASE=bitnami_moodle
@@ -30,9 +33,12 @@ services:
       - "mariadb_data:/bitnami"
     deploy:
       placement:
-        constraints: [node.role==worker]
+        constraints: 
+          - node.role == worker
     networks:
      - database
+    labels:
+     - "traefik.enable=false"
 
   moodle:
     image: adji21/moodle:latest
@@ -49,7 +55,8 @@ services:
      - "moodle_data:/bitnami"
     deploy:
       placement:
-        constraints: [node.role==worker]
+        constraints: 
+          - node.role == worker
     ports:
      - 8000:8080
     depends_on:
