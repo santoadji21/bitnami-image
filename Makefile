@@ -4,10 +4,12 @@ down:
 			docker-compose -f mdl-traefik-compose.yml down
 
 deploy:
-			docker stack deploy -c mdl-stackfile.yml moodle
+			docker stack deploy --compose-file=mdl-stackfile.yml moodle
 
 rm: 
 			docker stack rm moodle
+ls: 
+			docker service ls
 
 network:
 			docker network create traefik-network
