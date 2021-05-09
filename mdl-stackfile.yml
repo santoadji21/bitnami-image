@@ -6,10 +6,13 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "80:80"
+      - "80:8181"
       - "8080:8080"
-      - "8000:8000"
     deploy:
+      labels:
+        - "traefik.enable=true"
+        # - "traefik.http.routers.api.rule=Host(`192.168.56.10`)"
+        - "traefik.http.routers.api.service=api@internal"
       placement:
         constraints: 
           - node.role == manager
@@ -24,13 +27,9 @@ services:
       - --providers.docker=true
       - --providers.docker.swarmMode=true
       - --providers.docker.exposedbydefault=false
-      - --providers.docker.network=traefikproxy
+      - --providers.docker.network=traefik_default
     networks:
-      - traefikproxy
-    labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.api.rule=Host(`192.168.56.10`)"
-        - "traefik.http.routers.api.service=api@internal"
+      - traefik_default
 
   mariadb:
     image: bitnami/mariadb:latest
@@ -58,7 +57,7 @@ services:
       # - "traefik.tcp.services.mariadb-svc.loadbalancer.server.port=3306"
 
   moodle:
-    image: adji21/moodle:latest
+    image: adji21/moodle:exp.80
     environment:
      - MARIADB_HOST=mariadb
      - MARIADB_PORT_NUMBER=3306
@@ -75,24 +74,22 @@ services:
     volumes:
      - "moodle_data_swm:/bitnami"
     deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.moodle.rule=Host(`192.168.56.10`)"
+        - "traefik.http.routers.moodle.entrypoints=web"
+        - "traefik.http.services.moodle.loadbalancer.server.port=80"
       mode: replicated
       replicas:  2
       placement:
         constraints: 
           - node.role == worker
     networks:
+     - traefik_default
      - database
-     - traefikproxy
-    labels:
-      - traefik.enable=true
-      - traefik.http.services.moodle.loadbalancer.server.port=80
-      - "traefik.http.routers.moodle.rule=Host(`192.168.56.10`)"
-      - "traefik.http.routers.moodle.entrypoints=web"
-
 networks:
   database:
-  traefikproxy:
-    driver: overlay
+  traefik_default:
     external: true
 
 volumes:

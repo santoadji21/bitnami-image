@@ -16,6 +16,6 @@ network:
 rmn:
 			docker network rm traefik-network
 swn: 
-			docker network create -d overlay traefik-proxy
+			docker network create -d overlay traefik_default
 rmswn:      
 			docker network rm traefik-proxy
