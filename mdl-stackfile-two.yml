@@ -27,32 +27,30 @@ services:
       - --providers.docker=true
       - --providers.docker.swarmMode=true
       - --providers.docker.exposedbydefault=false
-      - --providers.docker.network=traefik-proxy
+      - --providers.docker.network=traefik_default
     networks:
-      - traefik-proxy
+      - traefik_default
 
   mariadb:
     image: bitnami/mariadb:latest
     environment:
-     - MARIADB_EXTRA_FLAGS= --max_allowed_packet=256M
      - MARIADB_USER=bn_moodle
      - MARIADB_DATABASE=bitnami_moodle
      - MARIADB_PASSWORD=bitnami
      - ALLOW_EMPTY_PASSWORD=yes
     volumes:
-      - "mariadb_data_swm:/bitnami/mariadb"
+      - "mariadb_data_swm:/bitnami"
     deploy:
       mode: replicated
-      replicas:  1
+      replicas:  2
       placement:
         constraints: 
           - node.role == worker
-          - node.hostname == worker-1
     networks:
       - database
     labels:
       - "traefik.enable=true"
-  
+    
       # - "traefik.tcp.routers.mariadb.rule=HostSNI(`*`)"
       # - "traefik.tcp.routers.mariadb.entrypoints=mariadb"
       # - "traefik.tcp.routers.mariadb.service=mariadb-svc"
@@ -61,8 +59,6 @@ services:
   moodle:
     image: adji21/moodle:exp.80
     environment:
-     - MOODLE_DATABASE_TYPE=mariadb
-    #  - MOODLE_SKIP_BOOTSTRAP=yes
      - MARIADB_HOST=mariadb
      - MARIADB_PORT_NUMBER=3306
      - MOODLE_DATABASE_HOST=mariadb
@@ -76,8 +72,7 @@ services:
      - MOODLE_EMAIL=ikhwangaul21@gmail.com
      - MOODLE_SITE_NAME='Moodle Cluster Docker Swarm'
     volumes:
-     - "moodle_data_swm:/bitnami/moodle"
-     - "moodledata_data_swm:/bitnami/moodledata"
+     - "moodle_data_swm:/bitnami"
     deploy:
       labels:
         - "traefik.enable=true"
@@ -89,33 +84,15 @@ services:
       placement:
         constraints: 
           - node.role == worker
-          - node.hostname == worker-1
     networks:
-     - database
-     - traefik-proxy
-    
+      - database
+      - traefik_default
+     
 networks:
   database:
-    driver: overlay
-    external: true
-  traefik-proxy:
-    driver: overlay
+  traefik_default:
     external: true
 
 volumes:
   mariadb_data_swm:
-    # driver: vieux/sshfs
-    # driver_opts:
-    #   sshcmd: "root@192.168.56.10:/var/mariadb_data"
-    #   allow_other: ""
   moodle_data_swm:
-    driver: vieux/sshfs
-    driver_opts:
-      sshcmd: "root@192.168.56.10:/var/moodle_data/moodle"
-      allow_other: ""
-  moodledata_data_swm:
-    driver: vieux/sshfs
-    driver_opts:
-      sshcmd: "root@192.168.56.10:/var/moodle_data/moodledata"
-      allow_other: ""  
-      
