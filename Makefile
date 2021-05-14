@@ -27,3 +27,8 @@ rmswn:
 			docker network rm traefik-proxy
 
 # docker service ps --filter "desired-state=running" 
+# Mariadb replication service
+mrep: 
+			docker stack deploy --compose-file=mariadb-replication-stack.yml mariadb
+rmrep: 
+			docker stack rm mariadb

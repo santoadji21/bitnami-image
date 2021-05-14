@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  mariadb-master:
+    image: bitnami/mariadb:latest
+    ports:
+      - '3306'
+    volumes:
+      - 'mariadb_data:/bitnami/mariadb'
+    environment:
+      - MARIADB_REPLICATION_MODE=master
+      - MARIADB_REPLICATION_USER=repl_user
+      - MARIADB_USER=bn_moodle
+      - MARIADB_DATABASE=bitnami_moodle
+      - MARIADB_PASSWORD=bitnami
+      - ALLOW_EMPTY_PASSWORD=yes
+      - MARIADB_ROOT_PASSWORD=my_root_password
+    networks:
+      - database
+    healthcheck:
+      test: ['CMD', '/opt/bitnami/scripts/mariadb/healthcheck.sh']
+      interval: 15s
+      timeout: 5s
+      retries: 6
+
+  mariadb-slave:
+    image: bitnami/mariadb:latest
+    ports:
+      - '3306'
+    depends_on:
+      - mariadb-master
+    environment:
+      - MARIADB_REPLICATION_MODE=slave
+      - MARIADB_REPLICATION_USER=repl_user
+      - MARIADB_USER=bn_moodle
+      - MARIADB_DATABASE=bitnami_moodle
+      - MARIADB_MASTER_HOST=mariadb-master
+      - MARIADB_PASSWORD=bitnami
+      - MARIADB_MASTER_PORT_NUMBER=3306
+      - MARIADB_MASTER_ROOT_PASSWORD=my_root_password
+      - ALLOW_EMPTY_PASSWORD=yes
+    deploy:
+      mode: replicated
+      replicas : 4
+      placement: 
+        max_replicas_per_node: 2
+        constraints:
+          - node.role == worker
+    networks:
+      - database
+
+    healthcheck:
+      test: ['CMD', '/opt/bitnami/scripts/mariadb/healthcheck.sh']
+      interval: 15s
+      timeout: 5s
+      retries: 6
+
+networks:
+  database:
+    driver: overlay
+    external: true
+  traefik-proxy:
+    driver: overlay
+    external: true
+
+volumes:
+  mariadb_data:
+    driver: vieux/sshfs
+    driver_opts:
+      sshcmd: "root@192.168.56.10:/var/mariadb_data"
+      allow_other: ""
+  
