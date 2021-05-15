@@ -49,13 +49,13 @@ services:
      - NAMI_LOG_LEVEL=trace8
     volumes:
       - "mariadb_data_swm:/bitnami/mariadb"
-    deploy:
-      mode: replicated
-      replicas:  4
-      placement:
-        max_replicas_per_node: 2
-        constraints: 
-          - node.role == worker
+    # deploy:
+      # mode: replicated
+      # replicas:  4
+      # placement:
+        # max_replicas_per_node: 2
+        # constraints: 
+          # - node.role == worker
           # - node.hostname == worker-1
     networks:
      - database
@@ -72,7 +72,7 @@ services:
      - MOODLE_DATABASE_TYPE=mariadb
     #  - MOODLE_DATABASE_TYPE=mysqli
     #  - MOODLE_SKIP_BOOTSTRAP=yes
-     - MOODLE_SKIP_INSTALL=yes
+    #  - MOODLE_SKIP_INSTALL=yes
      - BITNAMI_DEBUG=true
 
     #  - MARIADB_HOST=mariadb
@@ -96,12 +96,12 @@ services:
         - "traefik.http.routers.moodle.rule=Host(`192.168.56.10`)"
         - "traefik.http.routers.moodle.entrypoints=web"
         - "traefik.http.services.moodle.loadbalancer.server.port=8181"
-      mode: replicated
-      replicas:  4
-      placement:
-        max_replicas_per_node: 2
-        constraints: 
-          - node.role == worker
+      # mode: replicated
+      # replicas:  4
+      # placement:
+        # max_replicas_per_node: 2
+        # constraints: 
+          # - node.role == worker
           # - node.hostname == worker-1
     networks:
      - database
@@ -109,26 +109,13 @@ services:
     
 networks:
   database:
-    driver: overlay
-    external: true
+    driver: bridge
   traefik-proxy:
-    driver: overlay
-    external: true
+    driver: bridge
+
 
 volumes:
   mariadb_data_swm:
-    driver: vieux/sshfs
-    driver_opts:
-      sshcmd: "root@192.168.56.10:/var/mariadb_data"
-      allow_other: ""
   moodle_data_swm:
-    driver: vieux/sshfs
-    driver_opts:
-      sshcmd: "root@192.168.56.10:/var/moodle_data/moodle"
-      allow_other: ""
   moodledata_data_swm:
-    driver: vieux/sshfs
-    driver_opts:
-      sshcmd: "root@192.168.56.10:/var/moodle_data/moodledata"
-      allow_other: ""  
-      
+
