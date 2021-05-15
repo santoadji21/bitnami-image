@@ -87,6 +87,8 @@ services:
      - MOODLE_PASSWORD=Adminadji21
      - MOODLE_EMAIL=ikhwangaul21@gmail.com
      - MOODLE_SITE_NAME='Moodle Cluster Docker Swarm'
+    depends_on:
+     - mariadb
     volumes:
      - "moodle_data_swm:/bitnami/moodle"
      - "moodledata_data_swm:/bitnami/moodledata"
