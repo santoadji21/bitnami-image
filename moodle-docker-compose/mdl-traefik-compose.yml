@@ -1,0 +1,50 @@
+version: '3.7'
+
+services:
+
+  mariadb:
+    image: bitnami/mariadb:latest
+    environment:
+     - MARIADB_USER=bn_moodle
+     - MARIADB_DATABASE=bitnami_moodle
+     - MARIADB_PASSWORD=bitnami
+     - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - "mariadb_data:/bitnami"
+    networks:
+     - database
+
+  moodle:
+    image: adji21/moodle:latest
+    environment:
+     - PHP_UPLOAD_MAX_FILESIZE=2048M
+     - PHP_POST_MAX_SIZE=1024M
+    #  - MOODLE_SKIP_BOOTSTRAP=yes
+    #  - MOODLE_SKIP_INSTALL=yes
+     - BITNAMI_DEBUG=true
+     - MOODLE_DATABASE_HOST=mariadb
+     - MOODLE_DATABASE_PORT_NUMBER=3306
+     - MOODLE_DATABASE_USER=bn_moodle
+     - MOODLE_DATABASE_NAME=bitnami_moodle
+     - MOODLE_DATABASE_PASSWORD=bitnami
+     - ALLOW_EMPTY_PASSWORD=yes
+     - MOODLE_USERNAME=adji21
+     - MOODLE_PASSWORD=Adminadji21
+     - MOODLE_EMAIL=ikhwangaul21@gmail.com
+     - MOODLE_SITE_NAME='Moodle Docker Compose'
+    volumes:
+     - "moodle_data:/bitnami"
+    ports:
+     - 8080:8080
+    depends_on:
+     - mariadb
+    networks:
+     - database
+
+networks:
+  database:
+    driver: bridge
+
+volumes:
+  mariadb_data:
+  moodle_data:

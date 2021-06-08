@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+
   traefik:
     image: "traefik:v2.4"
     volumes:
@@ -8,11 +9,9 @@ services:
     ports:
       - "8181:8181"
       - "8080:8080"
-      - "3306:3306"
     deploy:
       labels:
         - "traefik.enable=true"
-        # - "traefik.http.routers.api.rule=Host(`192.168.56.10`)"
         - "traefik.http.routers.api.service=api@internal"
       placement:
         constraints: 
@@ -23,7 +22,6 @@ services:
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:8181
-      - --entrypoints.mariadb.address=:3306
       - --api.dashboard=true 
       - --api.debug=true
       - --providers.docker=true
@@ -36,11 +34,7 @@ services:
   mariadb:
     image: bitnami/mariadb:latest
     environment:
-    #  - MYSQL_ROOT_PASSWORD=bitnami
-    #  - MYSQL_DATABASE=bitnami_moodle
-    #  - MYSQL_USER=bn_moodle
-    #  - MYSQL_PASSWORD=bitnami
-
+     - BITNAMI_DEBUG=true 
      - MARIADB_EXTRA_FLAGS= --max_allowed_packet=256M
      - MARIADB_USER=bn_moodle
      - MARIADB_DATABASE=bitnami_moodle
@@ -51,32 +45,24 @@ services:
       - "mariadb_data_swm:/bitnami/mariadb"
     deploy:
       mode: replicated
-      replicas:  4
+      replicas:  1
       placement:
         max_replicas_per_node: 2
         constraints: 
           - node.role == worker
-          # - node.hostname == worker-1
+          - node.hostname == worker-1
     networks:
      - database
-     - traefik-proxy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.tcp.routers.mariadb.rule=Host(`*`)"
-      - "traefik.tcp.routers.mariadb.entrypoints=mariadb"
-      - "traefik.tcp.services.mariadb.loadbalancer.server.port=3306"
 
   moodle:
     image: adji21/moodle:port-8181
     environment:
-     - MOODLE_DATABASE_TYPE=mariadb
+    #  - MOODLE_DATABASE_TYPE=mariadb
     #  - MOODLE_DATABASE_TYPE=mysqli
-    #  - MOODLE_SKIP_BOOTSTRAP=yes
+     - MOODLE_SKIP_BOOTSTRAP=yes
      - MOODLE_SKIP_INSTALL=yes
      - BITNAMI_DEBUG=true
 
-    #  - MARIADB_HOST=mariadb
-    #  - MARIADB_PORT_NUMBER=3306
      - MOODLE_DATABASE_HOST=mariadb
      - MOODLE_DATABASE_PORT_NUMBER=3306
      - MOODLE_DATABASE_USER=bn_moodle

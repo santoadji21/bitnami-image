@@ -1,0 +1,159 @@
+version: '3.8'
+
+services:
+  traefik:
+    image: "traefik:v2.4"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8181:8181"
+      - "8080:8080"
+      # - "3306:3306"
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.api.service=api@internal"
+      placement:
+        constraints: 
+          - node.role == manager
+    command: 
+      - --log.level=DEBUG
+      - --api.insecure=true
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:8181
+      - --entrypoints.mariadb.address=:3306
+      - --api.dashboard=true 
+      - --api.debug=true
+      - --providers.docker=true
+      - --providers.docker.swarmMode=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=traefik-proxy
+    networks:
+      - traefik-proxy
+
+  moodle:
+    image: adji21/moodle:port-8181
+    environment:
+     - MOODLE_DATABASE_TYPE=mariadb
+    #  - MOODLE_DATABASE_TYPE=mysqli
+    #  - MOODLE_SKIP_BOOTSTRAP=yes
+    #  - MOODLE_SKIP_INSTALL=yes
+     - BITNAMI_DEBUG=true
+
+    #  - MARIADB_HOST=mariadb
+    #  - MARIADB_PORT_NUMBER=3306
+     - MOODLE_DATABASE_HOST=mariadb-master
+     - MOODLE_DATABASE_PORT_NUMBER=3306
+     - MOODLE_DATABASE_USER=bn_moodle
+     - MOODLE_DATABASE_NAME=bitnami_moodle
+     - MOODLE_DATABASE_PASSWORD=bitnami
+     - ALLOW_EMPTY_PASSWORD=yes
+     - MOODLE_USERNAME=adji21
+     - MOODLE_PASSWORD=Adminadji21
+     - MOODLE_EMAIL=ikhwangaul21@gmail.com
+     - MOODLE_SITE_NAME='Moodle Cluster Docker Swarm'
+    volumes:
+     - "moodle_data:/bitnami/moodle"
+     - "moodledata_data:/bitnami/moodledata"
+    deploy:
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.moodle.rule=Host(`192.168.56.10`)"
+        - "traefik.http.routers.moodle.entrypoints=web"
+        - "traefik.http.services.moodle.loadbalancer.server.port=8181"
+      mode: replicated
+      replicas:  1
+      placement:
+        max_replicas_per_node: 2
+        constraints: 
+          - node.role == worker
+          # - node.hostname == worker-1
+    networks:
+     - database
+     - traefik-proxy
+
+  mariadb-master:
+    image: bitnami/mariadb:latest
+    ports:
+      - '3306'
+    volumes:
+      - 'mariadb_data:/bitnami/mariadb'
+    environment:
+      - MARIADB_REPLICATION_MODE=master
+      - MARIADB_REPLICATION_USER=repl_user
+      - MARIADB_USER=bn_moodle
+      - MARIADB_DATABASE=bitnami_moodle
+      - MARIADB_PASSWORD=bitnami
+      - ALLOW_EMPTY_PASSWORD=yes
+      - MARIADB_ROOT_PASSWORD=my_root_password
+    deploy:
+      placement: 
+        max_replicas_per_node: 2
+        constraints:
+          - node.role == worker
+    networks:
+      - database
+    healthcheck:
+      test: ['CMD', '/opt/bitnami/scripts/mariadb/healthcheck.sh']
+      interval: 15s
+      timeout: 5s
+      retries: 6
+
+  mariadb-slave:
+    image: bitnami/mariadb:latest
+    ports:
+      - '3306'
+    depends_on:
+      - mariadb-master
+    environment:
+      - MARIADB_REPLICATION_MODE=slave
+      - MARIADB_REPLICATION_USER=repl_user
+      - MARIADB_USER=bn_moodle
+      - MARIADB_DATABASE=bitnami_moodle
+      - MARIADB_MASTER_HOST=mariadb-master
+      - MARIADB_PASSWORD=bitnami
+      - MARIADB_MASTER_PORT_NUMBER=3306
+      - MARIADB_MASTER_ROOT_PASSWORD=my_root_password
+      - ALLOW_EMPTY_PASSWORD=yes
+    deploy:
+      mode: replicated
+      replicas : 1
+      placement: 
+        max_replicas_per_node: 2
+        constraints:
+          - node.role == worker
+    networks:
+      - database
+
+    healthcheck:
+      test: ['CMD', '/opt/bitnami/scripts/mariadb/healthcheck.sh']
+      interval: 15s
+      timeout: 5s
+      retries: 6
+
+networks:
+  database:
+    driver: overlay
+    external: true
+  traefik-proxy:
+    driver: overlay
+    external: true
+
+volumes:
+  mariadb_data:
+    driver: vieux/sshfs
+    driver_opts:
+      sshcmd: "root@192.168.56.10:/var/mariadbrepl"
+      allow_other: ""
+  moodle_data:
+    driver: vieux/sshfs
+    driver_opts:
+      sshcmd: "root@192.168.56.10:/var/moodledata_repl/moodle"
+      allow_other: ""
+  moodledata_data:
+    driver: vieux/sshfs
+    driver_opts:
+      sshcmd: "root@192.168.56.10:/var/moodledata_repl/moodledata"
+      allow_other: ""  
+      
