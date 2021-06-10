@@ -6,28 +6,20 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     ports:
-      - "8181:8181"
       - "8080:8080"
-      - "3306:3306"
-    deploy:
-      labels:
-        - "traefik.enable=true"
-        # - "traefik.http.routers.api.rule=Host(`192.168.56.10`)"
-        - "traefik.http.routers.api.service=api@internal"
-      placement:
-        constraints: 
-          - node.role == manager
+      - "8181:8181"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.api.service=api@internal"
     command: 
       - --log.level=DEBUG
       - --api.insecure=true
       - --providers.docker=true
       - --providers.docker.exposedbydefault=false
       - --entrypoints.web.address=:8181
-      - --entrypoints.mariadb.address=:3306
       - --api.dashboard=true 
       - --api.debug=true
       - --providers.docker=true
-      - --providers.docker.swarmMode=true
       - --providers.docker.exposedbydefault=false
       - --providers.docker.network=traefik-proxy
     networks:
@@ -36,11 +28,7 @@ services:
   mariadb:
     image: bitnami/mariadb:latest
     environment:
-    #  - MYSQL_ROOT_PASSWORD=bitnami
-    #  - MYSQL_DATABASE=bitnami_moodle
-    #  - MYSQL_USER=bn_moodle
-    #  - MYSQL_PASSWORD=bitnami
-
+     - BITNAMI_DEBUG=true 
      - MARIADB_EXTRA_FLAGS= --max_allowed_packet=256M
      - MARIADB_USER=bn_moodle
      - MARIADB_DATABASE=bitnami_moodle
@@ -49,34 +37,17 @@ services:
      - NAMI_LOG_LEVEL=trace8
     volumes:
       - "mariadb_data_swm:/bitnami/mariadb"
-    # deploy:
-      # mode: replicated
-      # replicas:  4
-      # placement:
-        # max_replicas_per_node: 2
-        # constraints: 
-          # - node.role == worker
-          # - node.hostname == worker-1
     networks:
      - database
-     - traefik-proxy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.tcp.routers.mariadb.rule=Host(`*`)"
-      - "traefik.tcp.routers.mariadb.entrypoints=mariadb"
-      - "traefik.tcp.services.mariadb.loadbalancer.server.port=3306"
 
   moodle:
     image: adji21/moodle:port-8181
     environment:
-     - MOODLE_DATABASE_TYPE=mariadb
-    #  - MOODLE_DATABASE_TYPE=mysqli
+     - PHP_UPLOAD_MAX_FILESIZE=2048M
+     - PHP_POST_MAX_SIZE=1024M
     #  - MOODLE_SKIP_BOOTSTRAP=yes
     #  - MOODLE_SKIP_INSTALL=yes
      - BITNAMI_DEBUG=true
-
-    #  - MARIADB_HOST=mariadb
-    #  - MARIADB_PORT_NUMBER=3306
      - MOODLE_DATABASE_HOST=mariadb
      - MOODLE_DATABASE_PORT_NUMBER=3306
      - MOODLE_DATABASE_USER=bn_moodle
@@ -86,25 +57,17 @@ services:
      - MOODLE_USERNAME=adji21
      - MOODLE_PASSWORD=Adminadji21
      - MOODLE_EMAIL=ikhwangaul21@gmail.com
-     - MOODLE_SITE_NAME='Moodle Cluster Docker Swarm'
+     - MOODLE_SITE_NAME='Moodle Cluster Docker Compose'
     depends_on:
      - mariadb
     volumes:
      - "moodle_data_swm:/bitnami/moodle"
      - "moodledata_data_swm:/bitnami/moodledata"
-    deploy:
-      labels:
-        - "traefik.enable=true"
-        - "traefik.http.routers.moodle.rule=Host(`192.168.56.10`)"
-        - "traefik.http.routers.moodle.entrypoints=web"
-        - "traefik.http.services.moodle.loadbalancer.server.port=8181"
-      # mode: replicated
-      # replicas:  4
-      # placement:
-        # max_replicas_per_node: 2
-        # constraints: 
-          # - node.role == worker
-          # - node.hostname == worker-1
+    labels:
+     - "traefik.enable=true"
+     - "traefik.http.routers.moodle.rule=Host(`192.168.56.10`)"
+     - "traefik.http.routers.moodle.entrypoints=web"
+     - "traefik.http.services.moodle.loadbalancer.server.port=8181"
     networks:
      - database
      - traefik-proxy
@@ -114,7 +77,6 @@ networks:
     driver: bridge
   traefik-proxy:
     driver: bridge
-
 
 volumes:
   mariadb_data_swm:

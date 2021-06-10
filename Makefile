@@ -1,7 +1,7 @@
 compose: 	
-			docker-compose -f mdl-traefik-compose.yml up
+			docker-compose -f mdl-stackfile-compose.yml up
 down: 
-			docker-compose -f mdl-traefik-compose.yml down
+			docker-compose -f mdl-stackfile-compose.yml down
 
 deploy:
 			docker stack deploy --compose-file=mdl-stackfile.yml moodle
