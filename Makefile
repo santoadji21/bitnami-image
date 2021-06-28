@@ -4,7 +4,7 @@ down:
 			docker-compose -f mdl-stackfile-compose.yml down
 
 deploy:
-			docker stack deploy --compose-file=mdl-stackfile.yml moodle
+			docker stack deploy --compose-file=mdl-stackfile-local.yml moodle
 mdl: 
 			docker stack deploy --compose-file=mdl-stackfile-two.yml moodle
 
