@@ -2,14 +2,14 @@ FROM bitnami/moodle:3.9.1
 
 ADD ./plugins /opt/bitnami/moodle/mod/
 
-COPY ./config/php.ini /opt/bitnami/php/etc/custom.ini
+ADD ./config/php.ini /opt/bitnami/php/etc/conf.d/custom.ini
 
 # EXPOSE 
-# ENV APACHE_HTTP_PORT_NUMBER=8181
-# ENV APACHE_HTTPS_PORT_NUMBER=8143
-# EXPOSE 8181 8143
+ENV APACHE_HTTP_PORT_NUMBER=8181
+ENV APACHE_HTTPS_PORT_NUMBER=8143
+EXPOSE 8181 8143
 
-EXPOSE 8080
+#EXPOSE 8080
 
 USER root
 ENTRYPOINT [ "/opt/bitnami/scripts/moodle/entrypoint.sh" ]

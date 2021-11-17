@@ -18,6 +18,7 @@ if (!$conn) {
  $sql = "show variables where Variable_name like 'hostname' ";
 // $result = mysqli_query($conn, $sql);
 
+// Show Hosname Database
 $res = mysqli_query($conn, $sql);
 while ($row = mysqli_fetch_assoc($res)) {
   echo 'Database '.$row['Variable_name'].':'.$row['Value']."<br>\n";
